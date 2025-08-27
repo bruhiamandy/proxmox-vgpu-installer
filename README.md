@@ -9,7 +9,7 @@ Changes in version 1.2 (Notes from the forker)
 - Removed kernel pinning as it's no longer necessary.
 - Integrated `pve-nvidia-vgpu-helper` for a more robust setup.
 - Updated the host driver installation method and its service.
-- Updated supported vGPU driver versions to 18.3, 18.4, and 19.0 [PVE Wiki](https://pve.proxmox.com/wiki/NVIDIA_vGPU_on_Proxmox_VE#Software_Versions).
+- Updated supported vGPU driver versions to 18.3, 18.4, and 19.0. Check [PVE Wiki](https://pve.proxmox.com/wiki/NVIDIA_vGPU_on_Proxmox_VE#Software_Versions).
 - Removed support for older driver versions (16.x, 17.0).
 - Switched from `megadl` to `wget` for downloading drivers from new URLs.
 
