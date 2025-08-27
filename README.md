@@ -2,7 +2,8 @@ This is a little Bash script that configures a Proxmox 8 or 9 server to use Nvid
 
 For further instructions see my blogpost at https://wvthoog.nl/proxmox-7-vgpu-v3/
 
-Changes in version 1.2
+
+Changes in version 1.2 (Notes from the forker)
 - Added support for Proxmox 9.
 - Removed support for Proxmox 7.
 - Removed kernel pinning as it's no longer necessary.
