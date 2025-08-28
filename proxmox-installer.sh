@@ -372,7 +372,7 @@ case $STEP in
             # used to be pve-headers, but that will use latest version (which is currently 6.14)
             run_command "Installing packages" "info" "apt install -y git build-essential dkms proxmox-kernel-$(uname -r) proxmox-headers-$(uname -r) mdevctl wget pve-nvidia-vgpu-helper"
 
-            run_command "Setup pve-nvidia-vgpu-helper" "info" "pve-nvidia-vgpu-helper setup"
+            run_command "Setup pve-nvidia-vgpu-helper" "info" "echo y|pve-nvidia-vgpu-helper setup"
 			
             ## Pinning the kernel
             #kernel_version_compare() {
