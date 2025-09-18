@@ -9,7 +9,7 @@ STEP="${STEP:-1}"
 URL="${URL:-}"
 FILE="${FILE:-}"
 DRIVER_VERSION="${DRIVER_VERSION:-}"
-SCRIPT_VERSION=1.3
+SCRIPT_VERSION=1.2
 VGPU_DIR=$(pwd)
 VGPU_SUPPORT="${VGPU_SUPPORT:-}"
 DRIVER_VERSION="${DRIVER_VERSION:-}"
@@ -101,13 +101,8 @@ major_version=$(echo "$version" | sed 's/\([0-9]*\).*/\1/')
 # Function to map filename to driver version and patch
 map_filename_to_version() {
     local filename="$1"
-    if [[ "$filename" =~ ^(NVIDIA-Linux-x86_64-570\.158\.02-vgpu-kvm\.run|NVIDIA-Linux-x86_64-570\.172\.07-vgpu-kvm\.run|NVIDIA-Linux-x86_64-580\.65\.05-vgpu-kvm\.run|NVIDIA-Linux-x86_64-580\.82\.02-vgpu-kvm\.run)$ ]]; then
+    if [[ "$filename" =~ ^(NVIDIA-Linux-x86_64-570\.158\.02-vgpu-kvm\.run|NVIDIA-Linux-x86_64-570\.172\.07-vgpu-kvm\.run|NVIDIA-Linux-x86_64-580\.65\.05-vgpu-kvm\.run)$ ]]; then
         case "$filename" in
-            NVIDIA-Linux-x86_64-580.82.02-vgpu-kvm.run)
-                driver_version="19.1"
-                driver_patch="580.82.02.patch"
-                md5="fe3ecc481c3332422f33b6fab1d51a36"
-                ;;
             NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run)
                 driver_version="19.0"
                 driver_patch="580.65.05.patch"
@@ -130,123 +125,27 @@ map_filename_to_version() {
     fi
 }
 
-# License the vGPU (from v1.1.sh)
-configure_fastapi_dls() {
+# License the vGPU
+configure_nvlts() {
     echo ""
-    read -p "$(echo -e "${BLUE}[?]${NC} Do you want to license the vGPU? (y/n): ")" choice
+    read -p "$(echo -e "${BLUE}[?]${NC} Do you want to license the vGPU using nvlts? (y/n): ")" choice
     echo ""
 
     if [ "$choice" = "y" ]; then
-        # Installing Docker-CE
-        run_command "Installing Docker-CE" "info" "apt install ca-certificates curl -y; \
-        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc; \
-        chmod a+r /etc/apt/keyrings/docker.asc; \
-        echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \$(. /etc/os-release && echo \$VERSION_CODENAME) stable\" | \
-        tee /etc/apt/sources.list.d/docker.list > /dev/null; \
-        apt update; \
-        apt install docker-ce docker-compose -y"
-
-        # Docker pull FastAPI-DLS
-        run_command "Docker pull FastAPI-DLS" "info" "docker pull collinwebdesigns/fastapi-dls:latest; \
-        working_dir=/opt/docker/fastapi-dls/cert; \
-        mkdir -p \$working_dir; \
-        cd \$working_dir; \
-        openssl genrsa -out \$working_dir/instance.private.pem 2048; \
-        openssl rsa -in \$working_dir/instance.private.pem -outform PEM -pubout -out \$working_dir/instance.public.pem; \
-        echo -e '\n\n\n\n\n\n\n' | openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout \$working_dir/webserver.key -out \$working_dir/webserver.crt; \
-        docker volume create dls-db"
-
-        # Get the timezone of the Proxmox server
-        timezone=$(timedatectl | grep 'Time zone' | awk '{print $3}')
-
-        # Get the hostname of the Proxmox server
-        hostname=$(hostname -i)
-
-        fastapi_dir=~/fastapi-dls
-        mkdir -p $fastapi_dir
-
-        # Ask for desired port number here
-        echo ""
-        read -p "$(echo -e "${BLUE}[?]${NC} Enter the desired port number for FastAPI-DLS (default is 8443): ")" portnumber
-        portnumber=${portnumber:-8443}
-        echo -e "${RED}[!]${NC} Don't use port 80 or 443 since Proxmox is using those ports"
-        echo ""
-
-        echo -e "${GREEN}[+]${NC} Generate Docker YAML compose file"
-        # Generate the Docker Compose YAML file
-        cat > "$fastapi_dir/docker-compose.yml" <<EOF
-version: '3.9'
-
-x-dls-variables: &dls-variables
-  TZ: $timezone
-  DLS_URL: $hostname
-  DLS_PORT: $portnumber
-  LEASE_EXPIRE_DAYS: 90  # 90 days is maximum
-  DATABASE: sqlite:////app/database/db.sqlite
-  DEBUG: "false"
-
-services:
-  wvthoog-fastapi-dls:
-    image: collinwebdesigns/fastapi-dls:latest
-    restart: always
-    container_name: wvthoog-fastapi-dls
-    environment:
-      <<: *dls-variables
-    ports:
-      - "$portnumber:443"
-    volumes:
-      - /opt/docker/fastapi-dls/cert:/app/cert
-      - dls-db:/app/database
-    logging:  # optional, for those who do not need logs
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-
-volumes:
-  dls-db:
-EOF
-        # Issue docker-compose
-        run_command "Running Docker Compose" "info" "docker-compose -f \"$fastapi_dir/docker-compose.yml\" up -d"
-
-        # Create directory where license script (Windows/Linux are stored)
-        mkdir -p $VGPU_DIR/licenses
-
-        echo -e "${GREEN}[+]${NC} Generate FastAPI-DLS Windows/Linux executables"
-        # Create .sh file for Linux
-        cat > "$VGPU_DIR/licenses/license_linux.sh" <<EOF
-#!/bin/bash
-
-curl --insecure -L -X GET https://$hostname:$portnumber/-/client-token -o /etc/nvidia/ClientConfigToken/client_configuration_token_\$(date '+%d-%m-%Y-%H-%M-%S').tok
-service nvidia-gridd restart
-nvidia-smi -q | grep "License"
-EOF
-
-        # Create .ps1 file for Windows
-        cat > "$VGPU_DIR/licenses/license_windows.ps1" <<EOF
-curl.exe --insecure -L -X GET https://$hostname:$portnumber/-/client-token -o "C:\Program Files\NVIDIA Corporation\vGPU Licensing\ClientConfigToken\client_configuration_token_\$(Get-Date -f 'dd-MM-yy-hh-mm-ss').tok"
-Restart-Service NVDisplay.ContainerLocalSystem
-& 'nvidia-smi' -q  | Select-String "License"
-EOF
-
-        echo -e "${GREEN}[+]${NC} license_windows.ps1 and license_linux.sh created and stored in: $VGPU_DIR/licenses"
-        echo -e "${YELLOW}[-]${NC} Copy these files to your Windows or Linux VM's and execute"
+        run_command "Installing nvlts" "info" "wget -O /usr/local/bin/nvlts https://git.collinwebdesigns.de/vgpu/nvlts/raw/branch/main/nvlts_linux_amd64 && chmod +x /usr/local/bin/nvlts"
+        run_command "Generating license" "info" "nvlts daemon"
+        echo -e "${GREEN}[+]${NC} nvlts daemon started."
+        echo -e "${YELLOW}[-]${NC} Please follow the instructions at https://git.collinwebdesigns.de/vgpu/nvlts to configure your VMs."
         echo ""
         echo "Exiting script."
         echo ""
         exit 0
-
-        # Put the stuff below in here
     elif [ "$choice" = "n" ]; then
         echo ""
         echo "Exiting script."
-        echo "Install the Docker container in a VM/LXC yourself."
-        echo "By using this guide: https://git.collinwebdesigns.de/oscar.krause/fastapi-dls#docker"
+        echo "You can install nvlts manually later by following this guide: https://git.collinwebdesigns.de/vgpu/nvlts"
         echo ""
         exit 0
-
-        # Write instruction on how to setup Docker in a VM/LXC container
-        # Echo .yml script and docker-compose instructions
     else
         echo -e "${RED}[!]${NC} Invalid choice. Please enter (y/n)."
         exit 1
@@ -281,7 +180,7 @@ case $STEP in
     echo "2) Upgrade vGPU installation"
     echo "3) Remove vGPU installation"
     echo "4) Download vGPU drivers"
-    echo "5) License vGPU"
+    echo "5) License vGPU (nvlts)"
     echo "6) Exit"
     echo ""
     read -p "Enter your choice: " choice
@@ -820,20 +719,18 @@ case $STEP in
             echo ""
             echo "Select vGPU driver version:"
             echo ""
-            echo "1: 19.1 (580.82.02)"
-            echo "2: 19.0 (580.65.05)"
-            echo "3: 18.4 (570.172.07)"
-            echo "4: 18.3 (570.158.02)"
+            echo "1: 19.0 (580.65.05)"
+            echo "2: 18.4 (570.172.07)"
+            echo "3: 18.3 (570.158.02)"
             echo ""
 
             read -p "Enter your choice: " driver_choice
 
             # Validate the chosen filename against the compatibility map
             case $driver_choice in
-                1) driver_filename="NVIDIA-Linux-x86_64-580.82.02-vgpu-kvm.run" ;;
-                2) driver_filename="NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run" ;;
-                3) driver_filename="NVIDIA-Linux-x86_64-570.172.07-vgpu-kvm.run" ;;
-                4) driver_filename="NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run" ;;
+                1) driver_filename="NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run" ;;
+                2) driver_filename="NVIDIA-Linux-x86_64-570.172.07-vgpu-kvm.run" ;;
+                3) driver_filename="NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run" ;;
                 *) 
                     echo "Invalid choice. Please enter a valid option."
                     exit 1
@@ -853,9 +750,6 @@ case $STEP in
        
             # Set the driver URL
             case "$driver_version" in
-                19.1)
-                    driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/19.1/NVIDIA-GRID-Linux-KVM-580.82.02-580.82.07-581.15/Host_Drivers/NVIDIA-Linux-x86_64-580.82.02-vgpu-kvm.run"
-                    ;;
                 19.0)
                     driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/19.0/NVIDIA-GRID-Linux-KVM-580.65.05-580.65.06-580.88/Host_Drivers/NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run"
                     ;;
@@ -904,10 +798,10 @@ case $STEP in
             ;;
         5)  
             echo ""
-            echo "This will setup a FastAPI-DLS Nvidia vGPU licensing server on this Proxmox server"         
+            echo "This will setup a nvlts Nvidia vGPU licensing server on this Proxmox server"         
             echo ""
 
-            configure_fastapi_dls
+            configure_nvlts
             
             exit 0
             ;;
@@ -943,14 +837,14 @@ case $STEP in
                 echo -e ""
                 echo -e "Please make sure you have IOMMU enabled in the BIOS"
                 echo -e "and make sure that this line is present in /etc/default/grub"
-                echo -e "GRUB_CMDLINE_LINUX_DEFAULT=\"quiet amd_iommu=on iommu=pt\""
+                echo -e "GRUB_CMDLINE_LINUX_DEFAULT="quiet amd_iommu=on iommu=pt""
                 echo ""
             elif [ "$vendor_id" = "GenuineIntel" ]; then
                 echo -e "${RED}[!]${NC} Intel IOMMU Disabled"
                 echo -e ""
                 echo -e "Please make sure you have VT-d enabled in the BIOS"
                 echo -e "and make sure that this line is present in /etc/default/grub"
-                echo -e "GRUB_CMDLINE_LINUX_DEFAULT=\"quiet intel_iommu=on iommu=pt\""
+                echo -e "GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt""
                 echo ""
             else
                 echo -e "${RED}[!]${NC} Unknown CPU architecture."
@@ -1044,10 +938,9 @@ case $STEP in
             echo ""
             echo "Select vGPU driver version:"
             echo ""
-            echo "1: 19.1 (580.82.02)"
-            echo "2: 19.0 (580.65.05)"
-            echo "3: 18.4 (570.172.07)"
-            echo "4: 18.3 (570.158.02)"
+            echo "1: 19.0 (580.65.05)"
+            echo "2: 18.4 (570.172.07)"
+            echo "3: 18.3 (570.158.02)"
             echo ""
 
             read -p "Enter your choice: " driver_choice
@@ -1056,10 +949,9 @@ case $STEP in
 
             # Validate the chosen filename against the compatibility map
             case $driver_choice in
-                1) driver_filename="NVIDIA-Linux-x86_64-580.82.02-vgpu-kvm.run" ;;
-                2) driver_filename="NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run" ;;
-                3) driver_filename="NVIDIA-Linux-x86_64-570.172.07-vgpu-kvm.run" ;;
-                4) driver_filename="NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run" ;;
+                1) driver_filename="NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run" ;;
+                2) driver_filename="NVIDIA-Linux-x86_64-570.172.07-vgpu-kvm.run" ;;
+                3) driver_filename="NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run" ;;
                 *) 
                     echo "Invalid choice. Please enter a valid option."
                     exit 1
@@ -1078,9 +970,6 @@ case $STEP in
             # Set the driver URL if not provided
             if [ -z "$URL" ]; then
                 case "$driver_version" in
-                    19.1)
-                        driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/19.1/NVIDIA-GRID-Linux-KVM-580.82.02-580.82.07-581.15/Host_Drivers/NVIDIA-Linux-x86_64-580.82.02-vgpu-kvm.run"
-                        ;;
                     19.0)
                         driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/19.0/NVIDIA-GRID-Linux-KVM-580.65.05-580.65.06-580.88/Host_Drivers/NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run"
                         ;;
@@ -1182,11 +1071,7 @@ case $STEP in
 		run_command "List vGPU VFs" "info" "lspci -d 10de:"
 
         # Check DRIVER_VERSION against specific driver filenames
-        if [ "$driver_filename" == "NVIDIA-Linux-x86_64-580.82.02-vgpu-kvm.run" ]; then
-            echo -e "${GREEN}[+]${NC} In your VM download Nvidia guest driver for version: 580.82.02"
-            echo -e "${YELLOW}[-]${NC} Linux: https://alist.homelabproject.cc/d/foxipan/vGPU/19.1/NVIDIA-GRID-Linux-KVM-580.82.02-580.82.07-581.15/Guest_Drivers/NVIDIA-Linux-x86_64-580.82.02-grid.run"
-            echo -e "${YELLOW}[-]${NC} Windows: https://alist.homelabproject.cc/d/foxipan/vGPU/19.1/NVIDIA-GRID-Linux-KVM-580.82.02-580.82.07-581.15/Guest_Drivers/580.82_grid_win10_win11_server2019_server2022_64bit_international.exe"
-        elif [ "$driver_filename" == "NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run" ]; then
+        if [ "$driver_filename" == "NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run" ]; then
             echo -e "${GREEN}[+]${NC} In your VM download Nvidia guest driver for version: 580.65.05"
             echo -e "${YELLOW}[-]${NC} Linux: https://alist.homelabproject.cc/d/foxipan/vGPU/19.0/NVIDIA-GRID-Linux-KVM-580.65.05-580.65.06-580.88/Guest_Drivers/NVIDIA-Linux-x86_64-580.65.05-grid.run"
             echo -e "${YELLOW}[-]${NC} Windows: https://alist.homelabproject.cc/d/foxipan/vGPU/19.0/NVIDIA-GRID-Linux-KVM-580.65.05-580.65.06-580.88/Guest_Drivers/580.65_grid_win10_win11_server2019_server2022_64bit_international.exe"
@@ -1215,7 +1100,7 @@ case $STEP in
         rm -f "$VGPU_DIR/$CONFIG_FILE" 
 
         # Option to license the vGPU
-        configure_fastapi_dls
+        configure_nvlts
         ;;
     *)
         echo "Invalid installation step. Please check the script."
