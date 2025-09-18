@@ -4,11 +4,11 @@ For further instructions see my blogpost at https://wvthoog.nl/proxmox-7-vgpu-v3
 
 
 Changes in version 1.3 (Latest release)
-- Added support for driver version 19.1 (580.82.02) - the driver which supports RTX PRO 6000 Blackwell Server Edition.
-- **RTX 5000 Series Database**: Added all RTX 5000 desktop GPUs (5090, 5090 D, 5080, 5070 Ti, 5070, 5060 Ti, 5060, 5050) to database with driver version 19 (vGPU unlock not supported on consumer GeForce cards).
-- Reverted licensing system to use FastAPI-DLS (from v1.1) instead of nvlts (v1.2) for better reliability.
+- Added support for driver version 19.1 (580.82.02) - supports RTX PRO 6000 Blackwell Server Edition.
 - Updated supported vGPU driver versions to 18.3, 18.4, 19.0, and 19.1.
 - Reordered driver selection menu to show newest versions first (19.1, 19.0, 18.4, 18.3).
+- Reverted licensing system to use FastAPI-DLS (from v1.1) instead of nvlts (v1.2) for better reliability.
+- **RTX 5000 Series Database**: Added all RTX 5000 desktop GPUs (5090, 5090 D, 5080, 5070 Ti, 5070, 5060 Ti, 5060, 5050) to database with driver version 19 (vGPU unlock not supported on consumer GeForce cards).
 - **Database Improvements**: Updated gpu_info.db with corrected native vGPU support for RTX A4500 and RTX A5000. Improved 17 GPU descriptions by replacing generic "Graphics Device" entries with proper names from PCI IDs database.
 - All other v1.2 improvements maintained (Proxmox 8/9 support, pve-nvidia-vgpu-helper, wget downloads).
 
@@ -37,7 +37,7 @@ Changes in version 1.1 (original author wvthoog's latest release)
 
 ## Database Management
 
-The `gpu_info.db` SQLite database contains GPU compatibility information for vGPU detection. SQLite3 CLI tools are included for maintenance:
+The `gpu_info.db` SQLite database contains GPU compatibility information for vGPU detection (use [SQLite Tools](https://sqlite.org/download.html) to view/edit):
 
 ```bash
 # View all native vGPU cards
@@ -62,5 +62,5 @@ The `gpu_info.db` SQLite database contains GPU compatibility information for vGP
 - `chip`: GPU architecture
 
 ## To-Do
-1.  Replace FastAPI-DLS with nvlts (https://git.collinwebdesigns.de/vgpu/nvlts) in the future release. (current nvlts version not work).
+1.  Replace FastAPI-DLS with nvlts (https://git.collinwebdesigns.de/vgpu/nvlts) in the future release. (current nvlts may not work).
 2.  Continue adding new GPU data to gpu_info.db as new models are released (RTX 5000 series desktop GPUs completed).
