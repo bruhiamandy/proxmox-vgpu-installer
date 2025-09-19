@@ -1,9 +1,9 @@
 This is a little Bash script that configures a Proxmox 8 or 9 server to use Nvidia vGPU's. 
 
-For further instructions see my blogpost at https://wvthoog.nl/proxmox-7-vgpu-v3/
+For further instructions see original author's blogpost at https://wvthoog.nl/proxmox-7-vgpu-v3/
 
 
-Changes in version 1.3 (Latest release)
+Changes in version 1.3 (forker's latest release)
 - Added support for driver version 19.1 (580.82.02) - supports RTX PRO 6000 Blackwell Server Edition.
 - Updated supported vGPU driver versions to 18.3, 18.4, 19.0, and 19.1.
 - Reordered driver selection menu to show newest versions first (19.1, 19.0, 18.4, 18.3).
@@ -12,7 +12,7 @@ Changes in version 1.3 (Latest release)
 - **Database Improvements**: Updated gpu_info.db with corrected native vGPU support for RTX A4500 and RTX A5000. Improved 17 GPU descriptions by replacing generic "Graphics Device" entries with proper names from PCI IDs database.
 - All other v1.2 improvements maintained (Proxmox 8/9 support, pve-nvidia-vgpu-helper, wget downloads).
 
-▽ RTX PRO 6000 Blackwell Server Edition vGPU MDEV Enabled at Resource Mappings → Edit: PCI mapping page of Proxmox VE 9
+▽ RTX PRO 6000 Blackwell Server Edition vGPU MDEV Enabled at Resource Mappings page of Proxmox VE 9
 ![vgpu](pic/vgpu-rtxpro6kbwse-pcimapping.png)
 
 
@@ -68,4 +68,5 @@ The `gpu_info.db` SQLite database contains GPU compatibility information for vGP
 ## To-Do
 1.  Replace FastAPI-DLS with nvlts (https://git.collinwebdesigns.de/vgpu/nvlts) in the future release. (current nvlts may not work).
 2.  Continue adding new GPU data to gpu_info.db as new models are released (RTX 5000 series desktop GPUs completed).
+
 
