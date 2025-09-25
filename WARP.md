@@ -9,9 +9,11 @@ This repository contains a Bash script that configures Proxmox 8 or 9 servers to
 ## Architecture and Core Components
 
 ### Main Scripts
-- `proxmox-installer-v1.2.sh` - Current installer (supports Proxmox 8/9, driver versions 18.3, 18.4, 19.0)
-- `proxmox-installer-v1.1.sh` - Previous version (supports older driver versions 16.x, 17.0)
-- Both scripts follow a two-step installation process requiring a reboot between steps
+- `proxmox-installer.sh` - Current installer (v1.4, supports Proxmox 8/9, driver versions 18.3, 18.4, 19.0, 19.1)
+- `old/proxmox-installer-v1.3.sh` - Previous version
+- `old/proxmox-installer-v1.2.sh` - Older version
+- `old/proxmox-installer-v1.1.sh` - Original version (supports older driver versions 16.x, 17.0)
+- All scripts follow a two-step installation process requiring a reboot between steps
 
 ### Key Configuration Files
 - `config.txt` - Runtime configuration file created during installation (stores step, driver version, vGPU support type)
@@ -45,33 +47,33 @@ The installer follows a multi-step workflow:
 ### Running the Installer
 ```bash
 # Basic installation
-sudo bash proxmox-installer-v1.2.sh
+sudo bash proxmox-installer-v1.x.sh
 
 # Debug mode (shows all command output)
-sudo bash proxmox-installer-v1.2.sh --debug
+sudo bash proxmox-installer-v1.x.sh --debug
 
 # Resume from specific step
-sudo bash proxmox-installer-v1.2.sh --step 2
+sudo bash proxmox-installer-v1.x.sh --step 2
 
 # Install with pre-downloaded driver file
-sudo bash proxmox-installer-v1.2.sh --file NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run
+sudo bash proxmox-installer-v1.x.sh --file NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run
 
 # Install with custom driver URL
-sudo bash proxmox-installer-v1.2.sh --url "https://example.com/driver.run"
+sudo bash proxmox-installer-v1.x.sh --url "https://example.com/driver.run"
 ```
 
 ### Maintenance Operations
 ```bash
 # Download drivers only (option 4 in menu)
-sudo bash proxmox-installer-v1.2.sh
+sudo bash proxmox-installer-v1.x.sh
 # Select option 4
 
 # Setup licensing server only (option 5 in menu)
-sudo bash proxmox-installer-v1.2.sh
+sudo bash proxmox-installer-v1.x.sh
 # Select option 5
 
 # Clean removal (option 3 in menu)
-sudo bash proxmox-installer-v1.2.sh
+sudo bash proxmox-installer-v1.x.sh
 # Select option 3
 ```
 
@@ -94,7 +96,8 @@ find /sys/kernel/iommu_groups/ -type l
 
 ### Driver Version Mapping
 The installer supports these NVIDIA driver versions:
-- **19.0**: 580.65.05 (latest, recommended for Proxmox 8/9)
+- **19.1**: 580.82.02 (latest, supports RTX PRO 6000 Blackwell Server Edition, patch file not yet available)
+- **19.0**: 580.65.05 (recommended for Proxmox 8/9)
 - **18.4**: 570.172.07 (stable)
 - **18.3**: 570.158.02 (older stable)
 

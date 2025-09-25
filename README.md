@@ -3,7 +3,13 @@ This is a little Bash script that configures a Proxmox 8 or 9 server to use Nvid
 For further instructions see original author's blogpost at https://wvthoog.nl/proxmox-7-vgpu-v3/
 
 
-Changes in version 1.3 (forker's latest release)
+Changes in version 1.4 (current release)
+- Fixed patch compatibility issue with Debian 13 (Proxmox 9) where patch v2.8 causes NUL byte errors during driver patching.
+- Added automatic detection and installation of patch v2.7.6 when needed for NVIDIA driver patching.
+- Improved error logging for the patching process.
+- **Note**: Driver version 19.1 (580.82.02) currently has no patch file available. Please wait for the 580.82.02.patch release. Current vGPU patching works on 19.0 and 18.x versions only.
+
+Changes in version 1.3
 - Added support for driver version 19.1 (580.82.02) - supports RTX PRO 6000 Blackwell Server Edition.
 - Updated supported vGPU driver versions to 18.3, 18.4, 19.0, and 19.1.
 - Reordered driver selection menu to show newest versions first (19.1, 19.0, 18.4, 18.3).

@@ -9,7 +9,7 @@ STEP="${STEP:-1}"
 URL="${URL:-}"
 FILE="${FILE:-}"
 DRIVER_VERSION="${DRIVER_VERSION:-}"
-SCRIPT_VERSION=1.3
+SCRIPT_VERSION=1.4
 VGPU_DIR=$(pwd)
 VGPU_SUPPORT="${VGPU_SUPPORT:-}"
 DRIVER_VERSION="${DRIVER_VERSION:-}"
@@ -87,6 +87,44 @@ run_command() {
         eval "$command" > /dev/null 2>> "$VGPU_DIR/$LOG_FILE"
     else
         eval "$command"
+    fi
+}
+
+# Function to check patch version and install patch v2.7.6 if needed
+check_and_install_patch() {
+    # Check current patch version
+    local patch_version=$(patch --version | head -n 1 | awk '{print $3}')
+    echo -e "${YELLOW}[-]${NC} Current patch version: ${patch_version}"
+    
+    # Compare version with 2.7.6
+    if [[ $(echo "$patch_version 2.7.6" | awk '{if ($1 <= $2) print "yes"; else print "no"}') == "yes" ]]; then
+        echo -e "${GREEN}[+]${NC} Patch version is compatible (${patch_version} <= 2.7.6)"
+        return 0
+    else
+        echo -e "${YELLOW}[-]${NC} Patch version ${patch_version} may cause issues with NVIDIA driver patching"
+        echo -e "${YELLOW}[-]${NC} Installing patch v2.7.6..."
+        
+        # Create a temporary directory for patch installation
+        local temp_dir=$(mktemp -d)
+        cd "$temp_dir"
+        
+        # Download and install patch v2.7.6
+        run_command "Downloading patch v2.7.6" "info" "wget http://ftp.gnu.org/gnu/patch/patch-2.7.6.tar.gz"
+        run_command "Extracting patch v2.7.6" "info" "tar xvf patch-2.7.6.tar.gz"
+        cd patch-2.7.6
+        run_command "Configuring patch v2.7.6" "info" "./configure"
+        run_command "Building patch v2.7.6" "info" "make"
+        run_command "Installing patch v2.7.6" "info" "sudo make install"
+        
+        # Verify installation
+        local new_patch_version=$(/usr/local/bin/patch --version | head -n 1 | awk '{print $3}')
+        echo -e "${GREEN}[+]${NC} Installed patch version: ${new_patch_version}"
+        
+        # Clean up
+        cd "$VGPU_DIR"
+        rm -rf "$temp_dir"
+        
+        return 0
     fi
 }
 
@@ -1141,8 +1179,23 @@ case $STEP in
                 echo -e "${YELLOW}[-]${NC} Moved $custom_filename to $custom_filename.bak"
             fi
 
+            # Check patch version and install patch v2.7.6 if needed
+            check_and_install_patch
+            
             # Patch and install the driver
-            run_command "Patching driver" "info" "./$driver_filename --apply-patch $VGPU_DIR/vgpu-proxmox/$driver_patch"
+            if [ -x "/usr/local/bin/patch" ]; then
+                echo -e "${GREEN}[+]${NC} Using patch v2.7.6 from /usr/local/bin/patch"
+                run_command "Patching driver" "info" "PATH=/usr/local/bin:$PATH ./$driver_filename --apply-patch $VGPU_DIR/vgpu-proxmox/$driver_patch 2>> $VGPU_DIR/patch_error.log"
+            else
+                run_command "Patching driver" "info" "./$driver_filename --apply-patch $VGPU_DIR/vgpu-proxmox/$driver_patch 2>> $VGPU_DIR/patch_error.log"
+            fi
+            
+            # Check if patching was successful
+            if [ -s "$VGPU_DIR/patch_error.log" ]; then
+                echo -e "${YELLOW}[-]${NC} Patching encountered issues. Check $VGPU_DIR/patch_error.log for details."
+                cat "$VGPU_DIR/patch_error.log"
+            fi
+            
             # Run the patched driver installer
             run_command "Installing patched driver" "info" "./$custom_filename --dkms -s"
         elif [ "$VGPU_SUPPORT" = "Native" ] || [ "$VGPU_SUPPORT" = "Native" ] || [ "$VGPU_SUPPORT" = "Unknown" ]; then
