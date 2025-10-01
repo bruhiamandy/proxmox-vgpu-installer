@@ -139,7 +139,7 @@ major_version=$(echo "$version" | sed 's/\([0-9]*\).*/\1/')
 # Function to map filename to driver version and patch
 map_filename_to_version() {
     local filename="$1"
-    if [[ "$filename" =~ ^(NVIDIA-Linux-x86_64-570\.158\.02-vgpu-kvm\.run|NVIDIA-Linux-x86_64-570\.172\.07-vgpu-kvm\.run|NVIDIA-Linux-x86_64-580\.65\.05-vgpu-kvm\.run|NVIDIA-Linux-x86_64-580\.82\.02-vgpu-kvm\.run)$ ]]; then
+    if [[ "$filename" =~ ^(NVIDIA-Linux-x86_64-535\.230\.02-vgpu-kvm\.run|NVIDIA-Linux-x86_64-570\.172\.07-vgpu-kvm\.run|NVIDIA-Linux-x86_64-580\.65\.05-vgpu-kvm\.run|NVIDIA-Linux-x86_64-580\.82\.02-vgpu-kvm\.run)$ ]]; then
         case "$filename" in
             NVIDIA-Linux-x86_64-580.82.02-vgpu-kvm.run)
                 driver_version="19.1"
@@ -156,9 +156,9 @@ map_filename_to_version() {
                 driver_patch="570.172.07.patch"
                 md5="5b370637f2aaf2f1828027aeaabafff9"
                 ;;
-            NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run)
-                driver_version="18.3"
-                driver_patch="570.158.02.patch"
+            NVIDIA-Linux-x86_64-535.230.02-vgpu-kvm.run)
+                driver_version="16.9"
+                driver_patch="535.230.02.patch"
                 md5="c68a523bb835ea753bab2c1e9055d610"
                 ;;
         esac
@@ -861,7 +861,7 @@ case $STEP in
             echo "1: 19.1 (580.82.02)"
             echo "2: 19.0 (580.65.05)"
             echo "3: 18.4 (570.172.07)"
-            echo "4: 18.3 (570.158.02)"
+            echo "4: 16.9 (535.230.02)"
             echo ""
 
             read -p "Enter your choice: " driver_choice
@@ -871,7 +871,7 @@ case $STEP in
                 1) driver_filename="NVIDIA-Linux-x86_64-580.82.02-vgpu-kvm.run" ;;
                 2) driver_filename="NVIDIA-Linux-x86_64-580.65.05-vgpu-kvm.run" ;;
                 3) driver_filename="NVIDIA-Linux-x86_64-570.172.07-vgpu-kvm.run" ;;
-                4) driver_filename="NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run" ;;
+                4) driver_filename="NVIDIA-Linux-x86_64-535.230.02-vgpu-kvm-custom.run" ;;
                 *) 
                     echo "Invalid choice. Please enter a valid option."
                     exit 1
@@ -900,8 +900,8 @@ case $STEP in
                 18.4)
                     driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/18.4/NVIDIA-GRID-Linux-KVM-570.172.07-570.172.08-573.48/Host_Drivers/NVIDIA-Linux-x86_64-570.172.07-vgpu-kvm.run"
                     ;;
-                18.3)
-                    driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/18.3/NVIDIA-GRID-Linux-KVM-570.158.02-570.158.01-573.39/Host_Drivers/NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run"
+                16.9)
+                    driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/16.9/NVIDIA-GRID-Linux-KVM-535.230.02-539.19/Host_Drivers/NVIDIA-Linux-x86_64-535.230.02-vgpu-kvm.run"
                     ;;
             esac
 
@@ -1125,8 +1125,8 @@ case $STEP in
                     18.4)
                         driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/18.4/NVIDIA-GRID-Linux-KVM-570.172.07-570.172.08-573.48/Host_Drivers/NVIDIA-Linux-x86_64-570.172.07-vgpu-kvm.run"
                         ;;
-                    18.3)
-                        driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/18.3/NVIDIA-GRID-Linux-KVM-570.158.02-570.158.01-573.39/Host_Drivers/NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run"
+                    16.9)
+                        driver_url="https://alist.homelabproject.cc/d/foxipan/vGPU/16.9/NVIDIA-GRID-Linux-KVM-535.230.02-539.19/Host_Drivers/NVIDIA-Linux-x86_64-535.230.02-vgpu-kvm.run"
                         ;;
                 esac
             fi
@@ -1247,10 +1247,10 @@ case $STEP in
             echo -e "${GREEN}[+]${NC} In your VM download Nvidia guest driver for version: 570.172.07"
             echo -e "${YELLOW}[-]${NC} Linux: https://alist.homelabproject.cc/d/foxipan/vGPU/18.4/NVIDIA-GRID-Linux-KVM-570.172.07-570.172.08-573.48/Guest_Drivers/NVIDIA-Linux-x86_64-570.172.07-grid.run"
             echo -e "${YELLOW}[-]${NC} Windows: https://alist.homelabproject.cc/d/foxipan/vGPU/18.4/NVIDIA-GRID-Linux-KVM-570.172.07-570.172.08-573.48/Guest_Drivers/573.26_grid_win10_win11_server2019_server2022_64bit_international.exe"
-        elif [ "$driver_filename" == "NVIDIA-Linux-x86_64-570.158.02-vgpu-kvm.run" ]; then
+        elif [ "$driver_filename" == "NVIDIA-Linux-x86_64-535.230.02-vgpu-kvm.run" ]; then
             echo -e "${GREEN}[+]${NC} In your VM download Nvidia guest driver for version: 570.158.02"
-            echo -e "${YELLOW}[-]${NC} Linux: https://alist.homelabproject.cc/d/foxipan/vGPU/18.3/NVIDIA-GRID-Linux-KVM-570.158.02-570.158.01-573.39/Guest_Drivers_Patched/NVIDIA-Linux-x86_64-570.158.01-grid-custom.run"
-            echo -e "${YELLOW}[-]${NC} Windows: https://alist.homelabproject.cc/d/foxipan/vGPU/18.3/NVIDIA-GRID-Linux-KVM-570.158.02-570.158.01-573.39/Guest_Drivers_Patched/573.39_grid_win10_win11_server2019_server2022_64bit_international-custom.exe"
+            echo -e "${YELLOW}[-]${NC} Linux: https://alist.homelabproject.cc/d/foxipan/vGPU/16.9/NVIDIA-GRID-Linux-KVM-535.230.02-539.19/Guest_Drivers/NVIDIA-Linux-x86_64-535.230.02-grid.run"
+            echo -e "${YELLOW}[-]${NC} Windows: https://alist.homelabproject.cc/d/foxipan/vGPU/16.9/NVIDIA-GRID-Linux-KVM-535.230.02-539.19/Guest_Drivers/539.19_grid_win10_win11_server2019_server2022_dch_64bit_international.exe"
         else
             echo -e "${RED}[!]${NC} Unknown driver version: $driver_filename"
         fi
