@@ -1085,7 +1085,7 @@ case $STEP in
             echo "1: 19.1 (580.82.02)"
             echo "2: 19.0 (580.65.05)"
             echo "3: 18.4 (570.172.07)"
-            echo "4: 18.3 (570.158.02)"
+            echo "4: 16.9 (535.230.02)"
             echo ""
 
             read -p "Enter your choice: " driver_choice
